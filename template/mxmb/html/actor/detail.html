@@ -1,0 +1,54 @@
+{include file="public/include"}
+{include file="public/head"}
+<div class="mx-wrap">
+    <div class="mx-crumb">
+        <a href="{:mac_url('index/index')}">首页</a><span>/</span>
+        <a href="{:mac_url('actor/index')}">明星</a><span>/</span>
+        <span>{$obj.actor_name}</span>
+    </div>
+
+    <div class="mx-detail">
+        <div class="mx-detail-bg" style="background-image:url('{:mac_url_img($obj.actor_pic)}')"></div>
+        <div class="mx-detail-main">
+            <div class="mx-detail-post">
+                <img src="{:mac_url_img($obj.actor_pic)}" alt="{$obj.actor_name}" />
+            </div>
+            <div class="mx-detail-info">
+                <h1>{$obj.actor_name}</h1>
+                <p class="line"><b>地区：</b>{if condition="$obj.actor_area neq ''"}{$obj.actor_area}{else/}暂无{/if}</p>
+                <p class="line"><b>出生地：</b>{if condition="$obj.actor_birth_area neq ''"}{$obj.actor_birth_area}{else/}暂无{/if}</p>
+                <p class="line"><b>生日：</b>{if condition="$obj.actor_birthday neq ''"}{$obj.actor_birthday}{else/}暂无{/if}</p>
+                <p class="line"><b>代表作品：</b>{$obj.actor_works}</p>
+                <div class="mx-btns">
+                    <a class="mx-btn mx-primary" href="{:mac_url_actor_detail($obj)}">作品集</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mx-panel">
+        <h3>个人简介</h3>
+        <div class="mx-intro">
+            {if condition="$obj.actor_content neq ''"}{$obj.actor_content|mac_filter_html}{else}暂无介绍~{/if}
+        </div>
+    </div>
+
+    <section class="mx-section">
+        <div class="mx-head"><h2>{$obj.actor_name} 的作品</h2></div>
+        <div class="mx-vlist">
+            {maccms:vod num="24" actor="{$obj.actor_name}" order="desc" by="time"}
+            <div class="mx-vitem">
+                <a class="mx-cover" href="{:mac_url_vod_detail($vo)}" title="{$vo.vod_name}">
+                    <img src="{:mac_url_img($vo.vod_pic)}" alt="{$vo.vod_name}" loading="lazy" />
+                    <span class="mx-tag">{$vo.type.type_name|default='影视'}</span>
+                    {if condition="!empty($vo.vod_remarks)"}<span class="mx-remarks">{$vo.vod_remarks}</span>{/if}
+                </a>
+                <p class="mx-name"><a href="{:mac_url_vod_detail($vo)}" title="{$vo.vod_name}">{$vo.vod_name}</a></p>
+                <p class="mx-sub">{$vo.vod_actor|mac_substring=12}</p>
+            </div>
+            {/maccms:vod}
+        </div>
+        {include file="public/notempty"}
+    </section>
+</div>
+{include file="public/foot"}

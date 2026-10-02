@@ -1,0 +1,69 @@
+{include file="public/include"}
+{include file="public/head"}
+<div class="mx-wrap">
+    <div class="mx-notice show-mb">MXMB 影视 · 极简观影体验</div>
+
+    <!-- 首页推荐 -->
+    <section class="mx-section">
+        <div class="mx-head">
+            <h2>热门推荐</h2>
+            <a class="more" href="{:mac_url('vod/show',['id'=>1])}">更多 ›</a>
+        </div>
+        <div class="mx-vlist">
+            {maccms:vod num="10" level="1,2,3,4,5,6,7,8,9" order="desc" by="hits_month"}
+            <div class="mx-vitem">
+                <a class="mx-cover" href="{:mac_url_vod_detail($vo)}" title="{$vo.vod_name}">
+                    <img src="{:mac_url_img($vo.vod_pic)}" alt="{$vo.vod_name}" />
+                    <span class="mx-tag">{$vo.type.type_name|default='影视'}</span>
+                    {if condition="!empty($vo.vod_score)"}<span class="mx-score">{$vo.vod_score}</span>{/if}
+                    {if condition="!empty($vo.vod_remarks)"}<span class="mx-remarks">{$vo.vod_remarks}</span>{/if}
+                </a>
+                <p class="mx-name"><a href="{:mac_url_vod_detail($vo)}" title="{$vo.vod_name}">{$vo.vod_name}</a></p>
+                <p class="mx-sub">{$vo.vod_actor|mac_substring=16}</p>
+            </div>
+            {/maccms:vod}
+        </div>
+    </section>
+
+    <!-- 分类最新 -->
+    {maccms:type order="asc" by="sort" mid="1"}
+    <section class="mx-section">
+        <div class="mx-head">
+            <h2>{$vo.type_name}</h2>
+            <a class="more" href="{:mac_url_type($vo)}">更多 ›</a>
+        </div>
+        <div class="mx-vlist">
+            {maccms:vod num="8" type="{$vo.type_id}" order="desc" by="time"}
+            {php}$_vo = $vo;{/php}
+            <div class="mx-vitem">
+                <a class="mx-cover" href="{:mac_url_vod_detail($vo)}" title="{$vo.vod_name}">
+                    <img src="{:mac_url_img($vo.vod_pic)}" alt="{$vo.vod_name}" />
+                    <span class="mx-tag">{$_vo.type_name|default='影视'}</span>
+                    {if condition="!empty($vo.vod_score)"}<span class="mx-score">{$vo.vod_score}</span>{/if}
+                    {if condition="!empty($vo.vod_remarks)"}<span class="mx-remarks">{$vo.vod_remarks}</span>{/if}
+                </a>
+                <p class="mx-name"><a href="{:mac_url_vod_detail($vo)}" title="{$vo.vod_name}">{$vo.vod_name}</a></p>
+                <p class="mx-sub">{$vo.vod_actor|mac_substring=16}</p>
+            </div>
+            {/maccms:vod}
+        </div>
+    </section>
+    {/maccms:type}
+
+    <!-- 热播榜 -->
+    <section class="mx-section">
+        <div class="mx-head">
+            <h2>热播排行</h2>
+        </div>
+        <ul class="mx-rank">
+            {maccms:vod num="10" order="desc" by="hits_week"}
+            <li>
+                <span class="num">{$key}</span>
+                <a class="name" href="{:mac_url_vod_detail($vo)}" title="{$vo.vod_name}">{$vo.vod_name}</a>
+                <span class="val">{$vo.vod_remarks|default='热播'}</span>
+            </li>
+            {/maccms:vod}
+        </ul>
+    </section>
+</div>
+{include file="public/foot"}

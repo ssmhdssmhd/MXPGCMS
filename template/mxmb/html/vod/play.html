@@ -1,0 +1,45 @@
+{include file="public/include"}
+{include file="public/head"}
+<div class="mx-wrap">
+    <div class="mx-crumb">
+        <a href="{:mac_url('index/index')}">首页</a><span>/</span>
+        <a href="{:mac_url_type($obj.type)}">{$obj.type.type_name}</a><span>/</span>
+        <a href="{:mac_url_vod_detail($obj)}">{$obj.vod_name}</a><span>/</span>
+        <span>{$obj['vod_play_list'][$param['sid']]['urls'][$param['nid']]['name']}</span>
+    </div>
+
+    {if condition="($obj.vod_copyright eq 1 && $GLOBALS['config']['app']['copyright_status'] eq 1)"}
+    <div class="mx-player-wrap"><div class="mx-player-tip">{$GLOBALS['config']['app']['copyright_notice']|default='应版权方要求，本片资源已关闭'}</div></div>
+    {elseif condition="$obj.vod_lock"}
+    <div class="mx-player-wrap"><div class="mx-player-tip">该视频因特殊原因暂时无法观看，给您带来不便非常抱歉</div></div>
+    {elseif condition="$popedom.code gt 1"}
+    <div class="mx-player-wrap"><div class="mx-player-tip">当前内容需开通权限后方可观看</div></div>
+    {else}
+    <div class="mx-player-wrap" id="mxPlayerBox">{$player_data}{$player_js}</div>
+    {/if}
+
+    <div class="mx-btns" style="margin:16px 0">
+        <a class="mx-btn" href="{:mac_url_vod_detail($obj)}">返回详情</a>
+        {if condition="!empty($obj.player_info.link_pre)"}<a class="mx-btn" href="{$obj.player_info.link_pre}">上一集</a>{/if}
+        {if condition="!empty($obj.player_info.link_next)"}<a class="mx-btn mx-primary" href="{$obj.player_info.link_next}">下一集 ›</a>{/if}
+    </div>
+
+    <div class="mx-panel">
+        <h3>{$obj.vod_name} · {$obj['vod_play_list'][$param['sid']]['urls'][$param['nid']]['name']}</h3>
+        <div class="mx-source-tabs">
+            {maccms:foreach name="obj.vod_play_list" id="vo"}
+            <a href="{:mac_url_vod_play($obj,['sid'=>$vo.sid,'nid'=>$param.nid])}"{if condition="$param.sid eq $vo.sid"} class="active"{/if}>{$vo.player_info.show}{if condition="$vo.note neq ''"} · {$vo.note}{/if}</a>
+            {/maccms:foreach}
+        </div>
+        <div class="mx-playlist">
+            {maccms:foreach name="obj.vod_play_list" id="vo" key="key"}
+            {if condition="$vo.sid eq $param.sid"}
+            {maccms:foreach name="vo.urls" id="vo2"}
+            <a href="{:mac_url_vod_play($obj,['sid'=>$vo.sid,'nid'=>$vo2.nid])}"{if condition="$param.nid eq $vo2.nid"} class="active"{/if}>{$vo2.name}</a>
+            {/maccms:foreach}
+            {/if}
+            {/maccms:foreach}
+        </div>
+    </div>
+</div>
+{include file="public/foot"}

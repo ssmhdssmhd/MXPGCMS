@@ -1,5 +1,4 @@
 <?php
-
 return array (
   'db' => 
   array (
@@ -68,11 +67,11 @@ return array (
     'site_waplogo' => 'static/images/logo.jpg',
     'site_banner' => '',
     'site_app_launch_image' => '',
-    'template_dir' => 'default',
+    'template_dir' => 'mxmb',
     'html_dir' => 'html',
     'site_polyfill' => '0',
     'mob_status' => '0',
-    'mob_template_dir' => 'default',
+    'mob_template_dir' => 'mxmb',
     'mob_html_dir' => 'html',
     'site_tj' => '统计代码',
     'site_status' => '1',

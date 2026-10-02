@@ -1,0 +1,68 @@
+{include file="public/head"}
+<div class="mx-wrap">
+    <div class="mx-form-card">
+        <h2>用户注册</h2>
+        <form class="mx-form" id="mxRegForm" onsubmit="return false;">
+            <div class="field">
+                <input type="text" name="user_name" id="user_name" placeholder="账号" autocomplete="username" />
+            </div>
+            <div class="field">
+                <input type="password" name="user_pwd" id="user_pwd" placeholder="密码" autocomplete="new-password" />
+            </div>
+            <div class="field">
+                <input type="password" name="user_pwd2" id="user_pwd2" placeholder="确认密码" autocomplete="new-password" />
+            </div>
+            {if condition="!empty($user_config.login_verify)"}
+            <div class="field" style="display:flex;gap:10px;align-items:center">
+                <input type="text" name="verify" id="verify" placeholder="验证码" style="flex:1" />
+                <img src="{:url('verify/index')}" alt="验证码" title="点击刷新" onclick="this.src=this.src+'?'" style="width:90px;height:42px;border-radius:8px;cursor:pointer" />
+            </div>
+            {/if}
+            <p class="error" id="mxError" style="display:none;color:var(--mx-danger);font-size:13px"></p>
+            <button class="btn mx-primary" id="mxRegBtn" type="submit">注 册</button>
+        </form>
+        <div class="foot" style="margin-top:16px">
+            已有账号？<a href="{:url('user/login')}">立即登录</a>
+        </div>
+    </div>
+</div>
+{include file="public/foot"}
+<script>
+(function () {
+    var form = document.getElementById('mxRegForm');
+    var btn = document.getElementById('mxRegBtn');
+    var err = document.getElementById('mxError');
+    if (!form) return;
+    form.addEventListener('submit', function () {
+        var name = document.getElementById('user_name').value.trim();
+        var pwd = document.getElementById('user_pwd').value;
+        var pwd2 = document.getElementById('user_pwd2').value;
+        var verify = document.getElementById('verify');
+        if (!name) { err.textContent = '请输入账号'; err.style.display = 'block'; return; }
+        if (!pwd) { err.textContent = '请输入密码'; err.style.display = 'block'; return; }
+        if (pwd !== pwd2) { err.textContent = '两次密码不一致'; err.style.display = 'block'; return; }
+        err.style.display = 'none';
+        btn.disabled = true; btn.textContent = '注册中...';
+        var fd = new FormData();
+        fd.append('user_name', name);
+        fd.append('user_pwd', pwd);
+        fd.append('user_pwd2', pwd2);
+        if (verify && verify.value) fd.append('verify', verify.value);
+        fetch('{:url("user/reg")}', { method: 'POST', body: fd, credentials: 'same-origin' })
+            .then(function (r) { return r.json(); })
+            .then(function (res) {
+                if (res.code == 1) {
+                    location.href = "{:url('user/index')}";
+                } else {
+                    err.textContent = res.msg || '注册失败'; err.style.display = 'block';
+                    if (verify) verify.src = (verify.src.split('?')[0]) + '?' ;
+                    btn.disabled = false; btn.textContent = '注 册';
+                }
+            })
+            .catch(function () {
+                err.textContent = '网络错误，请重试'; err.style.display = 'block';
+                btn.disabled = false; btn.textContent = '注 册';
+            });
+    });
+})();
+</script>

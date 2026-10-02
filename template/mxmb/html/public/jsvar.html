@@ -1,0 +1,11 @@
+<script>
+var maccms = {
+    "path": "{$maccms.path}",
+    "path_tpl": "{$maccms.path_tpl}",
+    "mid": "{$maccms['mid']}",
+    "aid": "{$maccms['aid']}",
+    "url": "{$maccms['site_url']}",
+    "wapurl": "{$maccms['site_wapurl']}",
+    "site_name": {:json_encode(isset($maccms['site_name']) ? (string)$maccms['site_name'] : '', JSON_UNESCAPED_UNICODE)}
+};
+</script>

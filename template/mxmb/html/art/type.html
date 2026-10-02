@@ -1,0 +1,37 @@
+{include file="public/include"}
+{include file="public/head"}
+<div class="mx-wrap">
+    <div class="mx-crumb"><a href="{:mac_url('index/index')}">首页</a><span>/</span><span>{$obj.type_name}</span></div>
+    <div class="mx-grid">
+        <div class="mx-main">
+            <section class="mx-section">
+                <div class="mx-head"><h2>{$obj.type_name}</h2><a class="more" href="{:mac_url('art/index')}">文章中心 ›</a></div>
+                <ul class="mx-art-list">
+                    {maccms:art num="12" paging="yes" type="{$obj.type_id}" order="desc" by="time"}
+                    <li>
+                        <a class="cover" href="{:mac_url_art_detail($vo)}"><img src="{:mac_url_img($vo.art_pic)}" alt="{$vo.art_name}" loading="lazy" /></a>
+                        <div class="info">
+                            <h4><a href="{:mac_url_art_detail($vo)}" title="{$vo.art_name}">{$vo.art_name}</a></h4>
+                            <p>{$vo.art_remarks}</p>
+                            <p class="time">{$vo.art_time|date='Y-m-d H:i',###} · 阅读 {$vo.art_hits}</p>
+                        </div>
+                    </li>
+                    {/maccms:art}
+                </ul>
+                {include file="public/notempty"}
+                {include file="public/paging"}
+            </section>
+        </div>
+        <div class="mx-side">
+            <div class="mx-side-card">
+                <h3>热门文章</h3>
+                <ul class="mx-rank">
+                    {maccms:art num="8" order="desc" by="hits_week"}
+                    <li><span class="num">{$key}</span><a class="name" href="{:mac_url_art_detail($vo)}" title="{$vo.art_name}">{$vo.art_name}</a></li>
+                    {/maccms:art}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{include file="public/foot"}

@@ -1,0 +1,53 @@
+{include file="public/head"}
+<div class="mx-wrap">
+    <div class="mx-form-card">
+        <h2>用户登录</h2>
+        <form class="mx-form" id="mxLoginForm" onsubmit="return false;">
+            <div class="field">
+                <input type="text" name="user_name" id="user_name" placeholder="账号" autocomplete="username" />
+            </div>
+            <div class="field">
+                <input type="password" name="user_pwd" id="user_pwd" placeholder="密码" autocomplete="current-password" />
+            </div>
+            <p class="error" id="mxError" style="display:none;color:var(--mx-danger);font-size:13px"></p>
+            <button class="btn mx-primary" id="mxLoginBtn" type="submit">登 录</button>
+        </form>
+        <div class="foot" style="margin-top:16px">
+            还没有账号？<a href="{:url('user/reg')}">立即注册</a>
+        </div>
+    </div>
+</div>
+{include file="public/foot"}
+<script>
+(function () {
+    var form = document.getElementById('mxLoginForm');
+    var btn = document.getElementById('mxLoginBtn');
+    var err = document.getElementById('mxError');
+    if (!form) return;
+    form.addEventListener('submit', function () {
+        var name = document.getElementById('user_name').value.trim();
+        var pwd = document.getElementById('user_pwd').value;
+        if (!name) { err.textContent = '请输入账号'; err.style.display = 'block'; return; }
+        if (!pwd) { err.textContent = '请输入密码'; err.style.display = 'block'; return; }
+        err.style.display = 'none';
+        btn.disabled = true; btn.textContent = '登录中...';
+        var fd = new FormData();
+        fd.append('user_name', name);
+        fd.append('user_pwd', pwd);
+        fetch('{:url("user/login")}', { method: 'POST', body: fd, credentials: 'same-origin' })
+            .then(function (r) { return r.json(); })
+            .then(function (res) {
+                if (res.code == 1) {
+                    location.href = "{:url('user/index')}";
+                } else {
+                    err.textContent = res.msg || '登录失败'; err.style.display = 'block';
+                    btn.disabled = false; btn.textContent = '登 录';
+                }
+            })
+            .catch(function () {
+                err.textContent = '网络错误，请重试'; err.style.display = 'block';
+                btn.disabled = false; btn.textContent = '登 录';
+            });
+    });
+})();
+</script>

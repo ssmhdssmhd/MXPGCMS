@@ -1,0 +1,29 @@
+<header class="mx-header">
+    <div class="mx-wrap mx-header-inner">
+        <a class="mx-logo" href="{:mac_url('index/index')}" title="{$maccms.site_name}">
+            <img src="{$maccms.path_tpl}asset/img/web-logo.svg" alt="{$maccms.site_name}" />
+        </a>
+        <nav class="mx-nav" id="mxMenu">
+            <a href="{:mac_url('index/index')}">首页</a>
+            {maccms:type order="asc" by="sort" mid="1"}
+            <a href="{:mac_url_type($vo)}" title="{$vo.type_name}">{$vo.type_name}</a>
+            {/maccms:type}
+        </nav>
+        <div class="mx-search">
+            <form action="{:mac_url('vod/search')}" method="get" style="display:flex;align-items:center;flex:1">
+                <input type="text" name="wd" placeholder="搜索影视、演员..." value="{$param.wd|default=''}" autocomplete="off" />
+                <button type="submit">搜索</button>
+            </form>
+        </div>
+        <div class="mx-user">
+            {if condition="!empty($user['user_id'])"}
+            <a href="{:url('user/index')}">{$user.user_name}</a>
+            <a href="{:url('user/logout')}">退出</a>
+            {else/}
+            <a href="{:url('user/login')}">登录</a>
+            <a href="{:url('user/reg')}">注册</a>
+            {/if}
+        </div>
+        <button class="mx-burger" id="mxBurger" type="button" aria-label="菜单">☰</button>
+    </div>
+</header>

@@ -1,0 +1,20 @@
+{include file="public/include"}
+{include file="public/head"}
+<div class="mx-wrap">
+    <div class="mx-crumb"><a href="{:mac_url('index/index')}">首页</a><span>/</span><span>明星</span></div>
+    <section class="mx-section">
+        <div class="mx-head"><h2>明星大全</h2></div>
+        <div class="mx-actor-grid">
+            {maccms:actor num="24" paging="yes" order="desc" by="time"}
+            <div class="mx-actor-item">
+                <a class="pic" href="{:mac_url_actor_detail($vo)}"><img src="{:mac_url_img($vo.actor_pic)}" alt="{$vo.actor_name}" loading="lazy" /></a>
+                <p class="name"><a href="{:mac_url_actor_detail($vo)}">{$vo.actor_name}</a></p>
+                <p class="role">{$vo.actor_works|mac_substring=8}</p>
+            </div>
+            {/maccms:actor}
+        </div>
+        {include file="public/notempty"}
+        {include file="public/paging"}
+    </section>
+</div>
+{include file="public/foot"}

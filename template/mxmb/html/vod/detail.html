@@ -1,0 +1,108 @@
+{include file="public/include"}
+{include file="public/head"}
+<div class="mx-wrap">
+    <div class="mx-crumb">
+        <a href="{:mac_url('index/index')}">首页</a><span>/</span>
+        {notempty name="obj.type_1.type_id"}
+        <a href="{:mac_url_type($obj.type_1)}">{$obj.type_1.type_name}</a><span>/</span>
+        {/notempty}
+        <a href="{:mac_url_type($obj.type)}">{$obj.type.type_name}</a><span>/</span>
+        <span>{$obj.vod_name}</span>
+    </div>
+
+    <div class="mx-detail">
+        <div class="mx-detail-bg" style="background-image:url('{:mac_url_img($obj.vod_pic)}')"></div>
+        <div class="mx-detail-main">
+            <div class="mx-detail-post">
+                <img src="{:mac_url_img($obj.vod_pic)}" alt="{$obj.vod_name}" />
+            </div>
+            <div class="mx-detail-info">
+                <h1>{$obj.vod_name}</h1>
+                <div class="mx-meta">
+                    {if condition="$obj.vod_score gt 0"}<span class="tag score">{$obj.vod_score}分</span>{/if}
+                    <span class="tag">{$obj.type.type_name}</span>
+                    {if condition="$obj.vod_year neq ''"}<span class="tag">{$obj.vod_year}</span>{/if}
+                    {if condition="$obj.vod_area neq ''"}<span class="tag">{$obj.vod_area}</span>{/if}
+                    {if condition="$obj.vod_lang neq ''"}<span class="tag">{$obj.vod_lang}</span>{/if}
+                    {if condition="$obj.vod_remarks neq ''"}<span class="tag">{$obj.vod_remarks}</span>{/if}
+                    <span class="tag">更新 {$obj.vod_time_add|date='Y-m-d',###}</span>
+                </div>
+                <p class="line"><b>主演：</b>{if condition="$obj.vod_actor neq ''"}{$obj.vod_actor}{else/}暂无{/if}</p>
+                <p class="line"><b>导演：</b>{if condition="$obj.vod_director neq ''"}{$obj.vod_director}{else/}暂无{/if}</p>
+                <p class="line"><b>人气：</b>{$obj.vod_hits}</p>
+                <div class="mx-btns">
+                    {if condition="count($obj.vod_play_list) gt 0"}
+                    <a class="mx-btn mx-primary" href="{:mac_url_vod_play($obj,['sid'=>key($obj.vod_play_list),'nid'=>1])}">立即播放</a>
+                    {/if}
+                    {if condition="!empty($obj.vod_down_list)"}
+                    <a class="mx-btn" href="{:mac_url_vod_down($obj,['sid'=>key($obj.vod_down_list),'nid'=>1])}">资源下载</a>
+                    {/if}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mx-panel">
+        <h3>剧情介绍</h3>
+        <div class="mx-intro">
+            {if condition="$obj.vod_content neq ''"}{$obj.vod_content|mac_filter_html}{else}暂无简介，等待补充~{/if}
+        </div>
+    </div>
+
+    {if condition="count($obj.vod_play_list) gt 0"}
+    <div class="mx-panel">
+        <h3>播放列表</h3>
+        <div class="mx-source-tabs">
+            {maccms:foreach name="obj.vod_play_list" id="vo"}
+            <a href="{:mac_url_vod_play($obj,['sid'=>$vo.sid,'nid'=>1])}"{if condition="$param.sid eq $vo.sid && $param.sid neq ''"} class="active"{/if}>{$vo.player_info.show}{if condition="$vo.note neq ''"} · {$vo.note}{/if}</a>
+            {/maccms:foreach}
+        </div>
+        {maccms:foreach name="obj.vod_play_list" id="vo"}
+        {if condition="!empty($vo.urls)"}
+        {php}$ap_sid = $vo['sid'];{/php}
+        <div class="mx-playlist" style="margin-bottom:16px">
+            {maccms:foreach name="vo.urls" id="vo2"}
+            <a href="{:mac_url_vod_play($obj,['sid'=>$ap_sid,'nid'=>$vo2.nid])}"{if condition="$param.sid eq $ap_sid && $param.nid eq $vo2.nid"} class="active"{/if}>{$vo2.name}</a>
+            {/maccms:foreach}
+        </div>
+        {/if}
+        {/maccms:foreach}
+    </div>
+    {/if}
+
+    <div class="mx-grid">
+        <div class="mx-main">
+            <div class="mx-section">
+                <div class="mx-head"><h2>猜你喜欢</h2><a class="more" href="{:mac_url_type($obj.type)}">更多 ›</a></div>
+                <div class="mx-vlist">
+                    {maccms:vod num="10" type="{$obj.type_id}" order="desc" by="hits_week" ids="not{$obj.vod_id}"}
+                    <div class="mx-vitem">
+                        <a class="mx-cover" href="{:mac_url_vod_detail($vo)}" title="{$vo.vod_name}">
+                            <img src="{:mac_url_img($vo.vod_pic)}" alt="{$vo.vod_name}" loading="lazy" />
+                            <span class="mx-tag">{$vo.type.type_name|default='影视'}</span>
+                            {if condition="!empty($vo.vod_remarks)"}<span class="mx-remarks">{$vo.vod_remarks}</span>{/if}
+                        </a>
+                        <p class="mx-name"><a href="{:mac_url_vod_detail($vo)}" title="{$vo.vod_name}">{$vo.vod_name}</a></p>
+                        <p class="mx-sub">{$vo.vod_actor|mac_substring=12}</p>
+                    </div>
+                    {/maccms:vod}
+                </div>
+            </div>
+        </div>
+        <div class="mx-side">
+            <div class="mx-side-card">
+                <h3>热播排行</h3>
+                <ul class="mx-rank">
+                    {maccms:vod num="10" order="desc" by="hits_week"}
+                    <li>
+                        <span class="num">{$key}</span>
+                        <a class="name" href="{:mac_url_vod_detail($vo)}" title="{$vo.vod_name}">{$vo.vod_name}</a>
+                        <span class="val">{$vo.vod_hits}</span>
+                    </li>
+                    {/maccms:vod}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{include file="public/foot"}

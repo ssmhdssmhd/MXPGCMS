@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>{$msg}</title>
+<link rel="stylesheet" href="{$maccms.path_tpl}asset/css/mxmb.css?v=1.0.1" />
+</head>
+<body>
+<div class="mx-msg">
+    <h2>提示</h2>
+    <p>{$msg}</p>
+    {notempty name="url"}
+    <a class="btn" href="{$url}">点击跳转</a>
+    {else/}
+    <a class="btn" href="javascript:history.back(-1)">返回上页</a>
+    {/notempty}
+    <p style="margin-top:14px;font-size:12px">{$wait|default='3'} 秒后自动跳转</p>
+</div>
+<script>setTimeout(function(){location.href='{$url}';}, ({$wait|default='3'})*1000);</script>
+</body>
+</html>

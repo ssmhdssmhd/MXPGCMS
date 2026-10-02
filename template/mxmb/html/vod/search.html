@@ -1,0 +1,27 @@
+{include file="public/include"}
+{include file="public/head"}
+<div class="mx-wrap" id="mxSearchPage"
+     data-api-base="{:rtrim($maccms.path,'/').'/api.php'}"
+     data-search-wd="{:htmlspecialchars(isset($param['wd'])?$param['wd']:'',ENT_QUOTES,'UTF-8')}"
+     data-search-by="{:htmlspecialchars(isset($param['by'])?$param['by']:'time',ENT_QUOTES,'UTF-8')}"
+     data-search-page="{:htmlspecialchars(isset($param['page'])?$param['page']:'1',ENT_QUOTES,'UTF-8')}">
+    <div class="mx-crumb">
+        <a href="{:mac_url('index/index')}">首页</a><span>/</span><span>搜索</span>
+    </div>
+
+    <div class="mx-sortbar">
+        <a href="javascript:;" class="mx-search-sort active" data-by="time">按最新</a>
+        <a href="javascript:;" class="mx-search-sort" data-by="hits">按最热</a>
+        <a href="javascript:;" class="mx-search-sort" data-by="score">按评分</a>
+    </div>
+
+    <div class="mx-notice mx-search-summary">正在搜索：<b class="mx-search-wd"></b>，共 <b class="mx-search-total">0</b> 条结果</div>
+
+    <section class="mx-section">
+        <div class="mx-vlist mx-search-list"></div>
+        <div class="mx-notice mx-search-empty" style="display:none">没有找到相关内容，换个关键词试试～</div>
+        <div class="mx-pager" id="mxSearchPager"></div>
+    </section>
+</div>
+{include file="public/foot"}
+<script src="{$maccms.path_tpl}asset/js/mxmb-search.js?v=1.0.2"></script>

@@ -3404,6 +3404,12 @@ function mac_url_search($param=[],$flag='vod')
 function mac_url_type($info,$param=[],$flag='type')
 {
     $tab = 'vod';
+    if(!is_array($info)){
+        $info = [];
+    }
+    if(!is_array($param)){
+        $param = [];
+    }
     if($info['type_mid'] == 1){
 
     }
@@ -4199,4 +4205,18 @@ function mac_strip_tags($string) {
     }, $string);
     
     return strip_tags($string);
+}
+
+/**
+ * 语言翻译兼容函数（fastadmin-addons 依赖 __()）
+ * MacCMS 基于 ThinkPHP，补充全局 __() 以便第三方插件正常翻译提示语。
+ */
+if (!function_exists('__')) {
+    function __($name = '', $vars = [])
+    {
+        if (is_array($vars)) {
+            return \think\Lang::get($name, $vars);
+        }
+        return \think\Lang::get($name);
+    }
 }
