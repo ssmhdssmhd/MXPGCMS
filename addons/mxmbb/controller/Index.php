@@ -61,24 +61,25 @@ class Index extends Controller
             return json(['code' => 1, 'msg' => '自动更新未开启']);
         }
 
-        $files = $this->remoteFileList($config);
-        if ($files['code'] !== 0) {
-            return json(['code' => 1, 'msg' => $files['msg']]);
+        $root = $this->fetchRepo($config);
+        if ($root === false) {
+            return json(['code' => 1, 'msg' => '无法连接 GitHub，检查仓库地址']);
         }
 
-        // 统计本地缺失
+        $files  = $this->listRemoteFiles($root);
         $missing = [];
-        foreach ($files['files'] as $rel => $hash) {
+        foreach ($files as $rel) {
             if (!$this->localFileExists($rel)) {
                 $missing[] = $rel;
             }
         }
+        $this->cleanupRepo($root);
 
         return json([
             'code'    => 0,
             'msg'     => '检查完成',
             'data'    => [
-                'remote_total' => count($files['files']),
+                'remote_total' => count($files),
                 'local_missing'=> count($missing),
                 'missing'      => array_slice($missing, 0, 20),
             ],
@@ -86,7 +87,7 @@ class Index extends Controller
     }
 
     /**
-     * 一键更新：从仓库拉取文件并覆盖到本地
+     * 一键更新：从仓库拉取代码并覆盖到本地
      */
     public function update()
     {
@@ -98,51 +99,37 @@ class Index extends Controller
             return json(['code' => 1, 'msg' => '自动更新未开启']);
         }
 
-        $files = $this->remoteFileList($config);
-        if ($files['code'] !== 0) {
-            return json(['code' => 1, 'msg' => $files['msg']]);
+        $root = $this->fetchRepo($config);
+        if ($root === false) {
+            return json(['code' => 1, 'msg' => '无法连接 GitHub，检查仓库地址']);
         }
 
-        $scope    = isset($config['update_scope']) ? $config['update_scope'] : 'all';
-        $repoRaw  = $this->repoRawBase($config);
-        $username = 'ssmhdssmhd';
-        $repoName = 'MXPGCMS';
-        $branch   = $config['repo_branch'];
-
+        $scope   = isset($config['update_scope']) ? $config['update_scope'] : 'all';
         $success = 0;
         $fail    = [];
-        foreach ($files['files'] as $rel => $hash) {
-            // 按范围过滤
-            if ($scope === 'template' && strpos($rel, 'template/') !== 0) {
-                continue;
-            }
-            if ($scope === 'addon' && strpos($rel, 'addons/mxmbb/') !== 0) {
-                continue;
-            }
 
-            $rawUrl = $repoRaw . '/' . $username . '/' . $repoName . '/' . $branch . '/' . $rel;
-            $content = $this->httpGet($rawUrl);
-            if ($content === false) {
-                $fail[] = $rel;
+        foreach (['template', 'addons/mxmbb'] as $dir) {
+            if ($scope === 'template' && $dir !== 'template') {
                 continue;
             }
-            $local = ROOT_PATH . str_replace('template/', 'template/', $rel);
-            // 仅覆盖 template/ 与 addons/mxmbb/ 下的文件
-            if (strpos($rel, 'template/') !== 0 && strpos($rel, 'addons/mxmbb/') !== 0) {
+            if ($scope === 'addon' && $dir !== 'addons/mxmbb') {
                 continue;
             }
-            if (strpos($rel, 'template/') === 0 || strpos($rel, 'addons/mxmbb/') === 0) {
-                if ($this->writeFile($local, $content)) {
-                    $success++;
-                } else {
-                    $fail[] = $rel;
-                }
+            $src = $root . '/' . $dir;
+            if (!is_dir($src)) {
+                continue;
             }
+            $this->copyDir($src, ROOT_PATH . $dir, $success, $fail);
         }
+
+        $this->cleanupRepo($root);
 
         // 清理缓存
         $this->clearCache();
 
+        if (empty($success) && !empty($fail)) {
+            return json(['code' => 1, 'msg' => '更新失败', 'data' => ['success' => $success, 'fail' => $fail]]);
+        }
         return json([
             'code' => 0,
             'msg'  => '更新完成',
@@ -240,62 +227,151 @@ class Index extends Controller
     }
 
     /**
-     * 获取仓库文件清单：优先用 info.ini / README 约定的 manifest；
-     * 简化实现为从 GitHub API 获取树。
+     * 下载并解压仓库 tarball，返回解压后的仓库根目录；
+     * 失败返回 false。使用 GitHub Codeload 规避 API 限流。
      */
-    private function remoteFileList($config)
+    private function fetchRepo($config)
     {
         $username = 'ssmhdssmhd';
         $repoName = 'MXPGCMS';
         $branch   = $config['repo_branch'];
+        $url      = "https://codeload.github.com/{$username}/{$repoName}/tar.gz/refs/heads/{$branch}";
 
-        $api = "https://api.github.com/repos/{$username}/{$repoName}/git/trees/{$branch}?recursive=1";
-        $resp = $this->httpGet($api, [
-            'User-Agent: MXMBB-Update',
-            'Accept: application/vnd.github+json',
-        ]);
-        if ($resp === false) {
-            return ['code' => 1, 'msg' => '无法连接 GitHub，检查仓库地址'];
-        }
-        $data = json_decode($resp, true);
-        if (empty($data['tree'])) {
-            return ['code' => 1, 'msg' => '未能读取仓库目录'];
+        $body = $this->httpGet($url);
+        if ($body === false) {
+            return false;
         }
 
-        $files = [];
-        foreach ($data['tree'] as $item) {
-            if ($item['type'] !== 'blob') {
-                continue;
-            }
-            $path = $item['path'];
-            if (strpos($path, 'template/') === 0 || strpos($path, 'addons/mxmbb/') === 0) {
-                $files[$path] = $item['sha'];
-            }
+        $tmpDir = ROOT_PATH . 'runtime/mxmbb_repo_' . time();
+        if (!is_dir($tmpDir)) {
+            @mkdir($tmpDir, 0755, true);
         }
-        if (empty($files)) {
-            return ['code' => 1, 'msg' => '仓库中未发现 MXMB模板/MXMBB插件文件'];
+        $tarGz = $tmpDir . '/repo.tar.gz';
+        if (file_put_contents($tarGz, $body) === false) {
+            @rmdir($tmpDir);
+            return false;
         }
-        return ['code' => 0, 'files' => $files];
+
+        try {
+            $phar = new \PharData($tarGz);
+            $phar->decompress(); // 生成 repo.tar
+            $tar = $tmpDir . '/repo.tar';
+            if (!is_file($tar)) {
+                throw new \Exception('decompress failed');
+            }
+            $extract = $tmpDir . '/extract';
+            @mkdir($extract, 0755, true);
+            $phar = new \PharData($tar);
+            $phar->extractTo($extract, null, true);
+        } catch (\Exception $e) {
+            $this->recursiveDelete($tmpDir);
+            return false;
+        }
+
+        $root = $this->findRepoRoot($extract);
+        if ($root === false) {
+            $this->recursiveDelete($tmpDir);
+            return false;
+        }
+        return $root;
     }
 
-    private function repoRawBase($config)
+    /**
+     * 在解压目录中定位仓库根目录（顶层目录名形如 MXPGCMS-main）
+     */
+    private function findRepoRoot($extract)
     {
-        return 'https://raw.githubusercontent.com';
+        foreach (glob($extract . '/*', GLOB_ONLYDIR) ?: [] as $dir) {
+            if (is_dir($dir . '/template') || is_dir($dir . '/addons')) {
+                return $dir;
+            }
+        }
+        // 解压目录本身就是根
+        if (is_dir($extract . '/template') || is_dir($extract . '/addons')) {
+            return $extract;
+        }
+        return false;
+    }
+
+    /**
+     * 列出仓库根目录下 template/ 与 addons/mxmbb/ 的全部文件相对路径
+     */
+    private function listRemoteFiles($root)
+    {
+        $files = [];
+        foreach (['template', 'addons/mxmbb'] as $dir) {
+            $src = $root . '/' . $dir;
+            if (!is_dir($src)) {
+                continue;
+            }
+            $this->collectFiles($src, $dir, $files);
+        }
+        return $files;
+    }
+
+    private function collectFiles($dir, $prefix, &$files)
+    {
+        foreach (glob($dir . '/*') ?: [] as $f) {
+            if (is_dir($f)) {
+                $this->collectFiles($f, $prefix . '/' . basename($f), $files);
+            } else {
+                $files[] = $prefix . '/' . basename($f);
+            }
+        }
+    }
+
+    /**
+     * 递归复制目录到目标（保留相对路径），统计成功/失败
+     */
+    private function copyDir($src, $dst, &$success, &$fail)
+    {
+        if (!is_dir($dst)) {
+            @mkdir($dst, 0755, true);
+        }
+        foreach (glob($src . '/*') ?: [] as $f) {
+            $target = $dst . '/' . basename($f);
+            if (is_dir($f)) {
+                $this->copyDir($f, $target, $success, $fail);
+            } else {
+                if ($this->writeFile($target, file_get_contents($f))) {
+                    $success++;
+                } else {
+                    $fail[] = str_replace(ROOT_PATH, '', $target);
+                }
+            }
+        }
+    }
+
+    /**
+     * 清理临时下载目录
+     */
+    private function cleanupRepo($root)
+    {
+        $tmpDir = dirname(dirname($root));
+        if (strpos($tmpDir, ROOT_PATH . 'runtime/mxmbb_repo_') === 0) {
+            $this->recursiveDelete($tmpDir);
+        }
     }
 
     private function httpGet($url, $headers = [])
     {
         $ch = curl_init($url);
-        curl_setopt_array($ch, [
+        $opts = [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_TIMEOUT        => 30,
+            CURLOPT_TIMEOUT        => 60,
             CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_USERAGENT      => 'MXMBB-Update',
             CURLOPT_HTTPHEADER     => $headers,
-        ]);
+        ];
+        // 读取环境代理（服务器需走代理访问 GitHub 时自动生效）
+        $proxy = getenv('HTTPS_PROXY') ?: getenv('https_proxy')
+               ?: getenv('HTTP_PROXY') ?: getenv('http_proxy');
+        if (!empty($proxy)) {
+            $opts[CURLOPT_PROXY] = $proxy;
+        }
+        curl_setopt_array($ch, $opts);
         $body = curl_exec($ch);
-        $err  = curl_error($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         if ($body === false || $code >= 400) {

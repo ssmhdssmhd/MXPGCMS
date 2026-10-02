@@ -20,7 +20,7 @@ class Mxmbb extends Addons
         'title'   => 'MXMBB功能插件',
         'intro'   => 'MXMBB - 模板管理与自动更新',
         'author'  => '射手沫蝴蝶(MX)',
-        'version' => '1.0.0',
+        'version' => '0.1.1',
         'state'   => 1,
     ];
 
